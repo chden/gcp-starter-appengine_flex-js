@@ -1,0 +1,38 @@
+# https://cloud.google.com/appengine/docs/flexible/nodejs/reference/app-yaml
+
+runtime: nodejs
+env: flex
+
+service: default
+
+manual_scaling:
+  instances: 1
+
+resources:
+  cpu: 1
+  memory_gb: 0.5 # cpu * [0.9 - 6.5] - 0.4 => 1 * 0.9 - 0.4
+  disk_size_gb: 10
+
+network:
+  instance_tag: gcp-starter-appengine
+  name: default
+  session_affinity: false
+
+liveness_check:
+  path: "/check/liveness"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+
+readiness_check:
+  path: "/check/readiness"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: 60
+
+env_variables:
+  APP_ENV: prod
+  # APP_LOG_LEVEL: info

@@ -1,0 +1,70 @@
+steps:
+- name: 'gcr.io/cloud-builders/npm:node-12.18.3'
+  id: 'install'
+  args: ['ci']
+
+- name: 'gcr.io/cloud-builders/npm:node-12.18.3'
+  id: 'lint'
+  waitFor:
+  - 'install'
+  args: ['run', 'lint']
+
+- name: 'gcr.io/cloud-builders/npm:node-12.18.3'
+  id: 'test'
+  waitFor:
+  - 'install'
+  args: ['run','test']
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'deploy'
+  waitFor:
+  - 'test'
+  - 'lint'
+  entrypoint: /bin/bash
+  args:
+    - -c
+    - |
+      gcloud app deploy app.yaml \
+        --no-promote \
+        --version $(echo "${_APP_VERSION}" | sed s/[^a-z0-9-]/-/g)
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'get-env'
+  waitFor:
+    - 'deploy'
+  entrypoint: /bin/bash
+  args:
+    - -c
+    - |
+      export build_version=$(echo ${_APP_VERSION} | sed s/[^a-z0-9-]/-/g) &&
+      export build_url="$(gcloud app versions list --uri --filter "service:${_APP_SERVICE} version.id=${build_version}")" &&
+      env | grep '^build_' &&
+
+      # write vars to a file
+      env | grep '^build_' > /workspace/build_vars
+
+- name: 'gcr.io/cloud-builders/npm:node-12.18.3'
+  id: 'system-test'
+  waitFor:
+    - 'get-env'
+  entrypoint: /bin/bash
+  args:
+    - -c
+    - |
+      # read variables from file
+      . /workspace/build_vars &&
+
+      BASE_URL="$build_url" npm run test:system
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'promote'
+  waitFor:
+    - 'system-test'
+  entrypoint: /bin/bash
+  args:
+    - -c
+    - |
+      # read variables from file
+      . /workspace/build_vars &&
+
+      gcloud app services set-traffic ${_APP_SERVICE} --splits "${build_version}=1"

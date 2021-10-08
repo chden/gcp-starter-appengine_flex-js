@@ -1,0 +1,47 @@
+{
+  "name": "gcp-starter-appengine_flex-js",
+  "version": "1.0.0",
+  "description": "Simple starter project for Google App Engine Flexible Environment.",
+  "private": true,
+  "main": "js/index.js",
+  "config": {
+    "service": "default"
+  },
+  "scripts": {
+    "test": "cross-env APP_LOG_LEVEL=error mocha --timeout 5000 --recursive ./test/**/*.unit.test.js",
+    "test:debug": "npm run test -- --nolazy --inspect-brk=9229",
+    "test:system": "cross-env APP_LOG_LEVEL=error mocha --timeout 5000 --recursive ./test/**/*.system.test.js",
+    "lint": "npx eslint js test",
+    "start": "node js/index.js",
+    "start:debug": "node --inspect-brk js/index.js",
+    "deploy": "gcloud app deploy --no-promote",
+    "deploy:version": "gcloud app deploy --no-promote --version $(node -e \"console.log('${npm_package_version}'.replace(/[^a-z0-9-]/g,'-'))\")",
+    "deploy:promote": "gcloud app deploy --promote",
+    "split": "gcloud app services set-traffic",
+    "cicd": "cross-var gcloud builds submit --config cloudbuild.cicd.yaml --substitutions _APP_VERSION=$npm_package_version,_APP_SERVICE=$npm_package_config_service ."
+  },
+  "author": "chden",
+  "license": "MIT",
+  "engines": {
+    "node": "^12.0.0"
+  },
+  "dependencies": {
+    "@google-cloud/logging-winston": "^4.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "express-winston": "^4.0.5",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
+    "cross-env": "^7.0.3",
+    "cross-var": "^1.1.0",
+    "eslint": "^7.9.0",
+    "eslint-config-google": "^0.14.0",
+    "mocha": "^8.1.3",
+    "sinon": "^9.0.3",
+    "sinon-chai": "^3.5.0",
+    "sinon-express-mock": "^2.2.1"
+  }
+}
